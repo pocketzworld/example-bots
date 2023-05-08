@@ -15,8 +15,6 @@ For other commands, type:
 /b <insert-command-here>
 """
 
-
-
 class BlackJackBot(BaseBot):
     """
     A Highrise bot implementing a simple multiplayer blackjack game through chat messages.
@@ -191,7 +189,6 @@ class BlackJackBot(BaseBot):
     def is_creator(self, user: User) -> bool:
         """Determines if user is the creator of the game"""
         return self.game.creator.id == user.id
-
 
 
 class BlackJackGame:
@@ -377,9 +374,7 @@ class BlackJackGame:
                 if self.current_player >= len(self.players):
                     await self.end_round()
                 return
-
-                
-
+            
     async def start_game(self) -> None:
         """Starts the game."""
         self.is_started = True
