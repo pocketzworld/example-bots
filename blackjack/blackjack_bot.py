@@ -13,21 +13,30 @@ bot is currently in to see the list of available commands:
 For other commands, type:
 
 /b <insert-command-here>
+
+
+Example:
+/b create
+/b start
+/b stand
+/b n
+
+The Blackjack Bot will create a game, start and play the first round, and then end the game. 
 """
+
 
 class BlackJackBot(BaseBot):
     """
     A Highrise bot implementing a simple multiplayer blackjack game through chat messages.
 
     This class extends the base Highrise bot and uses additional methods and states to implement
-    a blackjack game in Highrise. This bot has a list of available commands that it implements using a BlackJackGame 
-    class, and handles error messages for invalid commands. There are simplier and more complicated 
-    ways to implement your own bot; the way it is done here is just an example to help get you 
-    started. It will mainly depend on your specific bot's needs.   
+    a blackjack game in Highrise. The bot handles various commands and keeps track of the game state
+    using the BlackJackGame class. 
     """
-    identifier: str = "/b " # make this an empty string for testing purposes
+
+    identifier: str = "/b "  # make this an empty string for testing purposes
     game: 'BlackJackGame' = None
-    COMMANDS: List[str] = [ 
+    COMMANDS: List[str] = [
         "help",             # list all commands
         "create",           # create a blackjack game
         "start",            # start the blackjack game
@@ -60,7 +69,7 @@ class BlackJackBot(BaseBot):
     async def on_user_leave(self, user: User) -> None:
         """On a user leaving the room."""
         if self.is_in_game(user):
-            await self.game.remove_player(user) 
+            await self.game.remove_player(user)
 
     async def on_chat(self, user: User, message: str) -> None:
         """On a received room-wide chat."""
@@ -71,39 +80,32 @@ class BlackJackBot(BaseBot):
     async def handle_command(self, user: User, message: str) -> None:
         """Handler for all bot commands"""
 
-        # handle invalid commands
-        if message in self.COMMAND_REQUIREMENTS["GAME_CREATED"] and not self.game_exists(): 
+        # Handle invalid commands
+        if message in self.COMMAND_REQUIREMENTS["GAME_CREATED"] and not self.game_exists():
             return await self.whisper_to_user(user, "No game has been created")
-        
+
         if message in self.COMMAND_REQUIREMENTS["GAME_START"] and not self.is_game_started():
             return await self.whisper_to_user(user, "No game has been started")
-        
+
         if message in self.COMMAND_REQUIREMENTS["PLAYER_TURN"] and not self.is_current_player(user):
             return await self.whisper_to_user(user, "It is not your turn to play")
 
-        # handle bot commands
+        # Handle bot commands
         match message:
             case 'create':
                 if not self.game_exists():
-                    self.game = BlackJackGame(self, user)              
+                    self.game = BlackJackGame(self, user)
                     await self.highrise.chat("Created Blackjack game!")
                 else:
                     await self.whisper_to_user(user, "A game has already been created")
 
-            case 'quit':
-                if self.is_in_game(user):
-                    await self.game.remove_player(user) 
+            case 'start':
+                if self.is_game_started():
+                    await self.whisper_to_user(user, "The game has already started")
+                elif not self.is_creator(user):
+                    await self.whisper_to_user(user, "You are not the creator of this game")
                 else:
-                    await self.whisper_to_user(user, "You are currently not in a game")
-
-            case 'hit':
-                await self.game.hit(user)       
-
-            case 'stand':
-                await self.game.end_turn()    
-
-            case 'show':
-                await self.game.show_table(False)
+                    await self.game.start_game()
 
             case 'join':
                 if not self.is_in_game(user):
@@ -111,13 +113,29 @@ class BlackJackBot(BaseBot):
                 else:
                     await self.whisper_to_user(user, "You are already in the game")
 
-            case 'start':
-                if self.is_game_started():
-                    await self.whisper_to_user(user, "The game has already started")
-                elif not self.is_creator(user):   
-                    await self.whisper_to_user(user, "You are not the creator of this game")
+            case 'lobby':
+                await self.show_lobby()
+
+            case 'hit':
+                await self.game.hit(user)
+
+            case 'stand':
+                await self.game.end_turn()
+
+            case 'show':
+                await self.game.show_table(False)
+
+            case 'quit':
+                if self.is_in_game(user):
+                    await self.game.remove_player(user)
                 else:
-                    await self.game.start_game()
+                    await self.whisper_to_user(user, "You are currently not in a game")
+
+            case 'help':
+                # a message in highrise is limited by 256 chars, so we have
+                # to split the instructions into two groups
+                await self.whisper_to_user(user, "\n" + "\n".join(self.COMMAND_INSTRUCTIONS[:3]))
+                await self.whisper_to_user(user, "\n" + "\n".join(self.COMMAND_INSTRUCTIONS[3:]))
 
             case 'yes' | 'y':
                 if self.is_creator(user):
@@ -126,20 +144,10 @@ class BlackJackBot(BaseBot):
                     await self.whisper_to_user(user, "You are not the creator of this game")
 
             case 'no' | 'n':
-                await self.game.remove_player(user) 
-
-            case 'lobby':
-                await self.show_lobby()
-
-            case 'help':
-                # a message in highrise is limited by 256 chars, so we have
-                # to split the instructions into two groups
-                await self.whisper_to_user(user, "\n" + "\n".join(self.COMMAND_INSTRUCTIONS[:3]))
-                await self.whisper_to_user(user, "\n" + "\n".join(self.COMMAND_INSTRUCTIONS[3:]))
+                await self.game.remove_player(user)
 
             case _:
                 await self.whisper_to_user(user, f"Not a valid command. Use {self.identifier}help to see the list of commands")
-
 
     # HELPERS
 
@@ -157,9 +165,10 @@ class BlackJackBot(BaseBot):
     async def end_game(self) -> None:
         """End the game."""
         lines = ["Game over!", f"Dealer wins: {self.game.dealer_wins}"]
-        
+
         for player in self.game.players:
-            lines.append(f"{player.username} wins: {self.game.player_wins[player.id]}")
+            lines.append(
+                f"{player.username} wins: {self.game.player_wins[player.id]}")
 
         await self.highrise.chat("\n".join(lines))
         self.game = None
@@ -193,17 +202,22 @@ class BlackJackBot(BaseBot):
 
 class BlackJackGame:
     """
-        BlackJackGame is a class that implements all of the game logic of blackjack to be included in the Highrise bot.
+    A class representing a blackjack game.
+
+    This class keeps track of the game state, including the players, cards, and current turn.
+    It handles various game actions such as starting the game, adding players, dealing cards,
+    and managing player turns.
     """
+
     def __init__(self, bot: 'BlackJackBot', creator: User):
         self.bot: 'BlackJackBot' = bot
         self.creator: User = creator
         self.players: List[User] = [creator]
         self.deck: List[str] = self.create_deck()
-        self.player_cards: Dict[str, List[str]] = {creator.id: []} 
-        self.player_scores: Dict[str, int] = {creator.id: []} 
-        self.dealer_cards: List[str] = [] 
-        self.dealer_score: int = 0 
+        self.player_cards: Dict[str, List[str]] = {creator.id: []}
+        self.player_scores: Dict[str, int] = {creator.id: []}
+        self.dealer_cards: List[str] = []
+        self.dealer_score: int = 0
         self.player_wins: Dict[str, int] = {creator.id: 0}
         self.dealer_wins: int = 0
         self.current_player: int = 0
@@ -213,7 +227,7 @@ class BlackJackGame:
     def draw_card(self) -> str:
         """Returns and removes a card from the deck."""
         return self.deck.pop(randrange(len(self.deck)))
-    
+
     def calculate_score(self, cards: List[str]) -> int:
         """Calculates the score of a hand in blackjack."""
         score = 0
@@ -234,16 +248,17 @@ class BlackJackGame:
     def create_deck(self) -> List[str]:
         """Creates a brand new 52 card deck."""
         return ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'K', 'Q'] * 4
-    
+
     def deal_cards(self) -> None:
         """Deal cards to all players in the game."""
         for player in self.players:
             self.player_cards[player.id] = [self.draw_card(), self.draw_card()]
-            self.player_scores[player.id] = self.calculate_score(self.player_cards[player.id])
+            self.player_scores[player.id] = self.calculate_score(
+                self.player_cards[player.id])
 
         self.dealer_cards = [self.draw_card(), self.draw_card()]
         self.dealer_score = self.calculate_score(self.dealer_cards)
-        
+
     async def show_table(self, reveal: bool = False) -> None:
         """Display the current table's cards."""
         lines = [f"Round: {self.round}"]
@@ -251,19 +266,21 @@ class BlackJackGame:
             line = f"{player.username}: {' '.join(self.player_cards[player.id])}"
             if self.is_bust(player):
                 line += " (bust)"
-            elif self.current_player < len(self.players) and player.id == self.players[self.current_player].id: 
+            elif self.current_player < len(self.players) and player.id == self.players[self.current_player].id:
                 line += " (playing)"
             lines.append(line)
-        
-        # we need to hide the dealer's second card if round not over yet
-        lines.append(f"Dealer: {self.dealer_cards[0]} {' '.join(self.dealer_cards[1:]) if reveal else '[X]'}")
-        
+
+        # We need to hide the dealer's second card if the round is not over yet
+        lines.append(
+            f"Dealer: {self.dealer_cards[0]} {' '.join(self.dealer_cards[1:]) if reveal else '[X]'}")
+
         await self.bot.highrise.chat('\n'.join(lines))
 
     async def hit(self, user: User) -> None:
         """Give the player another card."""
         self.player_cards[user.id].append(self.draw_card())
-        self.player_scores[user.id] = self.calculate_score(self.player_cards[user.id])
+        self.player_scores[user.id] = self.calculate_score(
+            self.player_cards[user.id])
         await self.show_table()
 
         if self.is_bust(user):
@@ -284,37 +301,40 @@ class BlackJackGame:
     async def end_round(self) -> None:
         """End the current round."""
         await self.bot.highrise.chat("Dealer revealing...")
-        
-        # dealer needs to draw cards until score >= 17
+
+        # Dealer needs to draw cards until score >= 17
         while self.dealer_should_hit():
             self.dealer_cards.append(self.draw_card())
             self.dealer_score = self.calculate_score(self.dealer_cards)
         await self.show_table(True)
 
-        if self.dealer_score > 21: 
-            # dealer busts
+        if self.dealer_score > 21:
+            # Dealer busts
             winners = []
             for p in self.players:
                 if not self.is_bust(p):
                     self.player_wins[p.id] += 1
                     winners.append(p)
 
-            await self.bot.highrise.chat(f"Dealer has gone bust! {', '.join(p.username for p in winners)} win!") # TODO: emote
+            # TODO: emote
+            await self.bot.highrise.chat(f"Dealer has gone bust! {', '.join(p.username for p in winners)} win!")
 
         else:
-            winners = [p for p in self.players if self.player_scores[p.id] > self.dealer_score and not self.is_bust(p)]
+            winners = [p for p in self.players if self.player_scores[p.id]
+                       > self.dealer_score and not self.is_bust(p)]
             if len(winners) > 0:
                 for player in winners:
-                    # update player wins count
+                    # Update player wins count
                     self.player_wins[player.id] += 1
-                    
+
                 await self.bot.highrise.chat(f"{', '.join(p.username for p in winners)} win!")
             else:
-                # dealer is sole winner
+                # Dealer is the sole winner
                 self.dealer_wins += 1
-                await self.bot.highrise.chat("Dealer wins!") #TODO: emote
+                # TODO: emote
+                await self.bot.highrise.chat("Dealer wins!")  
 
-        await self.bot.highrise.chat(f"{self.creator.username}, play another round? (yes/no)") 
+        await self.bot.highrise.chat(f"{self.creator.username}, play another round? (yes/no)")
 
     async def start_round(self) -> None:
         """Start new blackjack round with new deck and deal cards to players."""
@@ -324,7 +344,7 @@ class BlackJackGame:
         self.current_player = 0
 
         await self.show_table()
-        await self.bot.highrise.chat(f"{self.players[self.current_player].username}: Would you like to hit or stand?") 
+        await self.bot.highrise.chat(f"{self.players[self.current_player].username}: Would you like to hit or stand?")
 
     def dealer_should_hit(self) -> None:
         """Determine if the dealer should hit."""
@@ -339,12 +359,13 @@ class BlackJackGame:
     def is_bust(self, user: User) -> bool:
         """Determines if player's hand is a bust."""
         return self.player_scores[user.id] > 21
-    
+
     async def add_player(self, user: User) -> None:
         """Add a player to the game."""
         self.players.append(user)
         self.player_cards[user.id] = [self.draw_card(), self.draw_card()]
-        self.player_scores[user.id] = self.calculate_score(self.player_cards[user.id])
+        self.player_scores[user.id] = self.calculate_score(
+            self.player_cards[user.id])
         self.player_wins[user.id] = 0
 
         return await self.bot.highrise.chat(f"{user.username} has joined the game.")
@@ -352,29 +373,30 @@ class BlackJackGame:
     async def remove_player(self, user: User) -> None:
         """Remove a player from the game."""
         if (user.id == self.creator.id):
-            # if the creator leaves, then end the game
+            # If the creator leaves, then end the game
             await self.bot.highrise.chat(f"{user.username} (Creator) has left the game.")
             await self.bot.end_game()
             return
 
-        # remove the player from all records
+        # Remove the player from all records
         for index, player in enumerate(self.players):
             if user.id == player.id:
-                self.players = list(filter(lambda x: x.id != user.id, self.players))
+                self.players = list(
+                    filter(lambda x: x.id != user.id, self.players))
                 del self.player_cards[user.id]
                 del self.player_scores[user.id]
                 del self.player_wins[user.id]
 
                 if (index < self.current_player):
                     self.current_player -= 1
-                
+
                 await self.bot.highrise.chat(f"{user.username} has left the game.")
 
-                # end the round if player was last to move
                 if self.current_player >= len(self.players):
+                    # End the round if the player was last to move
                     await self.end_round()
                 return
-            
+
     async def start_game(self) -> None:
         """Starts the game."""
         self.is_started = True
