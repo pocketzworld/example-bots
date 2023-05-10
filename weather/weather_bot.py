@@ -3,7 +3,6 @@ from highrise import BaseBot, User
 
 
 """
-
 Note: 
 Make sure you have the requests module installed. You can install it using 'pip install requests'.
 An API key is also necessary to run this bot, sign up for a free one here: 'https://www.weatherapi.com/signup.aspx'
