@@ -5,8 +5,10 @@ from typing import Dict, List
 from highrise import BaseBot, User, Position, AnchorPosition
 
 """
-Usage:
+Note:
+Make sure there exists an empty data.json file in the directory of the bot file.
 
+Usage:
 To start interacting with the statistics bot, use any of the following commands in the chat of the 
 room your bot is currently in to see statistics of users who have entered your room:
 
