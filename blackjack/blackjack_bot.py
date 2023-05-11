@@ -4,7 +4,6 @@ from random import randrange
 
 """
 Usage:
-
 To start playing blackjack with the bot, type the following command in the chat of the room your
 bot is currently in to see the list of available commands:
 
