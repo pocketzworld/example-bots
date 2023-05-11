@@ -31,7 +31,7 @@ class WeatherBot(BaseBot):
     """
 
     identifier: str = "/w "  # make this an empty string for testing purposes
-    APIKEY: str = "1cd9cc46ead2448fa4c132944231005"
+    APIKEY: str = "<YOUR-API-KEY>"
 
     async def on_chat(self, user: User, message: str) -> None:
         """On a received room-wide chat."""
