@@ -50,7 +50,7 @@ class WeatherBot(BaseBot):
             data = response.json()
             if "current" in data:
                 # Extract the current temperature and display it
-                await self.highrise.chat(f"The current temperature of {message} is:\n{data['current']['temp_c']} °C\n{data['current']['temp_f']} °F")
+                await self.highrise.chat(f"The current temperature in {message} is:\n{data['current']['temp_c']} °C\n{data['current']['temp_f']} °F")
             else:
                 # Handle unrecognized location
                 await self.highrise.chat(f"Unrecognized location: {message}")
