@@ -33,7 +33,7 @@ class BlackJackBot(BaseBot):
     using the BlackJackGame class. 
     """
 
-    identifier: str = "/b "  # make this an empty string for testing purposes
+    identifier: str = "/b "  # Command prefix for the bot
     game: 'BlackJackGame' = None
     COMMANDS: List[str] = [
         "help",             # list all commands
