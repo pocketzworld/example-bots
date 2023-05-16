@@ -30,7 +30,7 @@ class WeatherBot(BaseBot):
     offers a command to retrieve the temperature of a specified location in celsius and fahrenheit. 
     """
 
-    identifier: str = "/w "  # make this an empty string for testing purposes
+    identifier: str = "/w "  # Command prefix for the bot
     APIKEY: str = "<YOUR-API-KEY>"
 
     async def on_chat(self, user: User, message: str) -> None:
