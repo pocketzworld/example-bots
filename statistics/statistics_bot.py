@@ -31,7 +31,7 @@ class StatisticsBot(BaseBot):
     a leaderboard of the most active users in the room. 
     """
 
-    identifier: str = "/s "  # make this an empty string for testing purposes
+    identifier: str = "/s "  # Command prefix for the bot
     lobby: Dict[str, dict] = {}
 
     async def on_chat(self, user: User, message: str) -> None:
