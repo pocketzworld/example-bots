@@ -1,7 +1,6 @@
 from json import load, dump
 from time import time
 from math import sqrt
-from typing import Dict, List
 from highrise import BaseBot, User, Position, AnchorPosition
 
 """
@@ -32,7 +31,7 @@ class StatisticsBot(BaseBot):
     """
 
     identifier: str = "/s "  # Command prefix for the bot
-    lobby: Dict[str, dict] = {}
+    lobby: dict[str, dict] = {}
 
     async def on_chat(self, user: User, message: str) -> None:
         """On a received room-wide chat."""
@@ -44,7 +43,7 @@ class StatisticsBot(BaseBot):
         self.write_data(user, "chat_message_chars", num_chars)
 
         # Handle commands
-        if (message.startswith(self.identifier)):
+        if message.startswith(self.identifier):
             await self.handle_command(user, message.removeprefix(self.identifier))
 
     async def on_user_join(self, user: User) -> None:
@@ -151,14 +150,14 @@ class StatisticsBot(BaseBot):
         """Calculate the distance a user has travelled based on their last and next locations"""
         return round(sqrt(pow(lastpos.x - nextpos.x, 2) + pow(lastpos.y - nextpos.y, 2) + pow(lastpos.z - nextpos.z, 2)))
 
-    def create_default(self) -> Dict[str, object]:
+    def create_default(self) -> dict[str, object]:
         """Create a dictionary to track user data"""
         return ({
                 "last_pos": Position(0, 0, 0, "FrontRight"),
                 "time_joined": time()
                 })
 
-    def get_leaderboard(self, data: Dict[str, dict]) -> List[str]:
+    def get_leaderboard(self, data: dict[str, dict]) -> list[str]:
         """Returns the top 5 most active users based on their score, where the score is the sum of all metrics"""
 
         # Calculate the score for each user
@@ -173,6 +172,6 @@ class StatisticsBot(BaseBot):
 
         return top_five
 
-    def calculate_score(self, data: Dict[str, dict]) -> List[str]:
+    def calculate_score(self, data: dict[str, dict]) -> list[str]:
         """Calculates the score of a user to determine leaderboard rankings"""
         return data["time_spent"] + data["chat_message_chars"] + data["distance_travelled"]

@@ -1,4 +1,4 @@
-import requests
+import httpx
 from highrise import BaseBot, User
 
 
@@ -31,19 +31,19 @@ class WeatherBot(BaseBot):
     """
 
     identifier: str = "/w "  # Command prefix for the bot
-    APIKEY: str = "<YOUR-API-KEY>"
+    APIKEY: str = "<YOUR-API-KEY>" # API key for weatherapi.com 
 
     async def on_chat(self, user: User, message: str) -> None:
         """On a received room-wide chat."""
 
         # Handle commands
-        if (message.startswith(self.identifier)):
+        if message.startswith(self.identifier):
             await self.handle_command(message.removeprefix(self.identifier))
 
     async def handle_command(self, message: str) -> None:
         """Handler for bot commands"""
 
-        response = self.getWeatherData(message)
+        response = await self.get_weather_data(message)
 
         if response is not None:
             # Convert the response to JSON format
@@ -51,6 +51,12 @@ class WeatherBot(BaseBot):
             if "current" in data:
                 # Extract the current temperature and display it
                 await self.highrise.chat(f"The current temperature in {message} is:\n{data['current']['temp_c']} °C\n{data['current']['temp_f']} °F")
+            elif "error" in data:
+                # Common mistake is to forget to replace <YOUR-API-KEY>
+                await self.highrise.chat("Make sure you've configured your bot with a valid weatherapi.com API key")
+
+                # Other error handling would go here...
+
             else:
                 # Handle unrecognized location
                 await self.highrise.chat(f"Unrecognized location: {message}")
@@ -58,12 +64,10 @@ class WeatherBot(BaseBot):
             # Handle failed API request
             await self.highrise.chat("Failed to retrieve weather data.")
 
-    def getWeatherData(self, location: str) -> requests.Response:
+    async def get_weather_data(self, location: str) -> httpx.Response:
         """Retrieves and returns the weather data based on provided location"""
-        url = f"http://api.weatherapi.com/v1/current.json?key={self.APIKEY}&q={location}"
-        payload = {}
-        headers = {}
+        async with httpx.AsyncClient() as client:
+            # Send a GET request to the API endpoint
+            response = await client.get(f"http://api.weatherapi.com/v1/current.json?key={self.APIKEY}&q={location}")
 
-        # Send a GET request to the API endpoint
-        response = requests.request("GET", url, headers=headers, data=payload)
-        return response
+            return response

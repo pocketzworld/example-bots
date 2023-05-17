@@ -1,5 +1,4 @@
 from highrise import BaseBot, User
-from typing import List, Dict, Set
 from random import randrange
 
 """
@@ -35,7 +34,7 @@ class BlackJackBot(BaseBot):
 
     identifier: str = "/b "  # Command prefix for the bot
     game: 'BlackJackGame' = None
-    COMMANDS: List[str] = [
+    COMMANDS: list[str] = [
         "help",             # list all commands
         "create",           # create a blackjack game
         "start",            # start the blackjack game
@@ -48,12 +47,12 @@ class BlackJackBot(BaseBot):
         "yes",              # continue to play next round
         "no"                # leave the blackjack game
     ]
-    COMMAND_REQUIREMENTS: Dict[str, Set[str]] = {
+    COMMAND_REQUIREMENTS: dict[str, set[str]] = {
         "GAME_CREATED": {"start", "join", "lobby", "quit", "show", "hit", "stand", "yes", "no"},
         "GAME_START": {"show", "hit", "stand", "yes", "no"},
         "PLAYER_TURN": {"hit", "stand"}
     }
-    COMMAND_INSTRUCTIONS: List[str] = [
+    COMMAND_INSTRUCTIONS: list[str] = [
         "help - list all commands",
         "create - create a blackjack game",
         "start - start the game",
@@ -211,13 +210,13 @@ class BlackJackGame:
     def __init__(self, bot: 'BlackJackBot', creator: User):
         self.bot: 'BlackJackBot' = bot
         self.creator: User = creator
-        self.players: List[User] = [creator]
-        self.deck: List[str] = self.create_deck()
-        self.player_cards: Dict[str, List[str]] = {creator.id: []}
-        self.player_scores: Dict[str, int] = {creator.id: []}
-        self.dealer_cards: List[str] = []
+        self.players: list[User] = [creator]
+        self.deck: list[str] = self.create_deck()
+        self.player_cards: dict[str, list[str]] = {creator.id: []}
+        self.player_scores: dict[str, int] = {creator.id: []}
+        self.dealer_cards: list[str] = []
         self.dealer_score: int = 0
-        self.player_wins: Dict[str, int] = {creator.id: 0}
+        self.player_wins: dict[str, int] = {creator.id: 0}
         self.dealer_wins: int = 0
         self.current_player: int = 0
         self.round: int = 0
@@ -227,7 +226,7 @@ class BlackJackGame:
         """Returns and removes a card from the deck."""
         return self.deck.pop(randrange(len(self.deck)))
 
-    def calculate_score(self, cards: List[str]) -> int:
+    def calculate_score(self, cards: list[str]) -> int:
         """Calculates the score of a hand in blackjack."""
         score = 0
         num_aces = 0
@@ -244,7 +243,7 @@ class BlackJackGame:
             num_aces -= 1
         return score
 
-    def create_deck(self) -> List[str]:
+    def create_deck(self) -> list[str]:
         """Creates a brand new 52 card deck."""
         return ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'K', 'Q'] * 4
 
