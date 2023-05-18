@@ -31,7 +31,7 @@ class StatisticsBot(BaseBot):
     """
 
     identifier: str = "/s "  # Command prefix for the bot
-    lobby: dict[str, dict] = {}
+    lobby: dict[str, dict] = {} # A dictionary to store user activity data temporarily
 
     async def on_chat(self, user: User, message: str) -> None:
         """On a received room-wide chat."""

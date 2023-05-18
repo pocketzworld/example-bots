@@ -1,7 +1,7 @@
 from highrise import BaseBot, CurrencyItem, Item, Position, Reaction, SessionMetadata, User
 
 
-class EchoBot(BaseBot):
+class Bot(BaseBot):
     async def on_user_join(self, user: User) -> None:
         """On a user joining the room."""
         print(f"[JOIN   ] {user.username}")
